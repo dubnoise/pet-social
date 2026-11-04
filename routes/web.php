@@ -5,38 +5,40 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\PetController;
+use App\Http\Controllers\FollowController;
+use App\Http\Controllers\DashboardController;
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [PostController::class, 'index'])->name('dashboard');
-    Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
-
-    // Interacciones
-    Route::post('/posts/{post}/like', [LikeController::class, 'toggle'])->name('posts.like');
-    Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
-});
-
+// Página de bienvenida pública
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Rutas protegidas para usuarios autenticados
+Route::middleware(['auth', 'verified'])->group(function () {
 
-Route::middleware('auth')->group(function () {
+    // Dashboard principal gestionado por el controlador con el filtro de Manada
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Publicaciones (Posts)
+    Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+
+    // Interacciones (Likes y Comentarios)
+    Route::post('/posts/{post}/like', [LikeController::class, 'toggle'])->name('posts.like');
+    Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
+
+    // Rutas de Mascotas
+    Route::get('/pets/create', [PetController::class, 'create'])->name('pets.create');
+    Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
+    Route::get('/pets/{pet}', [PetController::class, 'show'])->name('pets.show');
+
+    // Sistema de Seguidores / Manada
+    Route::post('/pets/{pet}/follow', [FollowController::class, 'toggle'])->name('pets.follow');
+
+    // Gestión del perfil de usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    // Asegúrate de que /dashboard llame a PostController::class
-    Route::get('/dashboard', [PostController::class, 'index'])->name('dashboard');
-
-    // Ruta para crear publicaciones
-    Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
-});
-
 require __DIR__.'/auth.php';
-

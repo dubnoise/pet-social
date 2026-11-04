@@ -19,10 +19,16 @@
 
                     <!-- Mis Mascotas -->
                     <div>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Mis Peludos 🐾</h3>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Mis Peludos 🐾</h3>
+                            <a href="{{ route('pets.create') }}" class="text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-lg transition">
+                                + Añadir
+                            </a>
+                        </div>
+
                         <div class="space-y-3">
                             @foreach($userPets as $pet)
-                                <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-purple-50/50 border border-purple-100/60">
+                                <a href="{{ route('pets.show', $pet) }}" class="flex items-center gap-3 p-2.5 rounded-2xl bg-purple-50/50 border border-purple-100/60 hover:bg-purple-100/50 transition block">
                                     <div class="w-10 h-10 bg-purple-200 rounded-xl flex items-center justify-center text-lg">
                                         {{ $pet->species === 'cat' ? '🐱' : '🐶' }}
                                     </div>
@@ -30,7 +36,7 @@
                                         <h4 class="text-sm font-bold text-slate-800">{{ $pet->name }}</h4>
                                         <p class="text-xs text-slate-500">{{ $pet->breed ?: 'Mestizo' }}</p>
                                     </div>
-                                </div>
+                                </a>
                             @endforeach
                         </div>
                     </div>
@@ -39,6 +45,18 @@
 
             <!-- ================= COLUMNA CENTRAL: FEED Y CREAR POST ================= -->
             <div class="md:col-span-8 space-y-6">
+
+                <!-- Filtro de Feed (Ubicado correctamente dentro de la columna central) -->
+                <div class="flex items-center gap-2 bg-white p-2 rounded-2xl border border-purple-100 shadow-sm w-fit">
+                    <a href="{{ route('dashboard', ['feed' => 'all']) }}"
+                       class="px-4 py-2 rounded-xl text-xs font-bold transition {{ request('feed', 'all') === 'all' ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20' : 'text-slate-600 hover:bg-purple-50' }}">
+                        🌍 Descubrir Todo
+                    </a>
+                    <a href="{{ route('dashboard', ['feed' => 'manada']) }}"
+                       class="px-4 py-2 rounded-xl text-xs font-bold transition {{ request('feed') === 'manada' ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20' : 'text-slate-600 hover:bg-purple-50' }}">
+                        🐾 Mi Manada (Seguidos)
+                    </a>
+                </div>
 
                 <!-- Alerta de éxito -->
                 @if(session('success'))
@@ -57,7 +75,7 @@
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Publicar como:</label>
                             <select name="pet_id" class="w-full rounded-2xl border-slate-200 focus:border-purple-500 focus:ring-purple-500 text-sm bg-slate-50/50 py-2.5 px-3">
                                 @foreach($userPets as $pet)
-                                    <option value="{{ $pet->id }}">{{ $pet->name }} ({{ ucfirst($pet->species) }})</option>
+                                    <option value="{{ $pet->id }}">{{ $pet->name }} ({{ ucfirst($pet->species_in_spanish) }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -89,12 +107,16 @@
                             <!-- Cabecera del Post -->
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-lg">
+                                    <!-- Enlace en el Avatar -->
+                                    <a href="{{ route('pets.show', $post->pet) }}" class="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-lg hover:scale-105 transition">
                                         {{ substr($post->pet->name, 0, 1) }}
-                                    </div>
+                                    </a>
                                     <div>
                                         <h4 class="font-bold text-slate-900 leading-tight flex items-center gap-1.5">
-                                            {{ $post->pet->name }}
+                                            <!-- Enlace en el Nombre -->
+                                            <a href="{{ route('pets.show', $post->pet) }}" class="font-bold text-slate-900 leading-tight hover:text-purple-600 transition">
+                                                {{ $post->pet->name }}
+                                            </a>
                                             <span class="text-xs font-normal text-slate-400">por {{ $post->user->name }}</span>
                                         </h4>
                                         <span class="text-xs text-purple-600 font-medium">{{ $post->created_at->diffForHumans() }}</span>
@@ -159,7 +181,9 @@
                             </div>
                         </div>
                     @empty
-                        <!-- Empty State -->
+                        <div class="bg-white p-8 rounded-3xl text-center border border-purple-100">
+                            <p class="text-slate-500 text-sm">No hay publicaciones todavía en esta sección 🐾</p>
+                        </div>
                     @endforelse
                 </div>
 
