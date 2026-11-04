@@ -11,17 +11,19 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
+                <!-- Navigation Links (Escritorio) -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-purple-100 font-bold hover:text-white border-white">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')" class="text-purple-100 font-bold hover:text-white border-white">
+                        {{ __('Mapa Pet-Friendly') }}
+                    </x-nav-link>
                 </div>
             </div>
 
-            <!-- Settings Dropdown & Notificaciones -->
+            <!-- Settings Dropdown & Notificaciones (Escritorio) -->
             <div class="hidden sm:flex sm:items-center sm:ms-6 gap-3">
-
                 <!-- Notificaciones Dropdown -->
                 <div class="relative" x-data="{ openNotif: false }">
                     <button @click="openNotif = !openNotif" class="relative p-2.5 rounded-xl text-purple-100 hover:text-white bg-white/10 hover:bg-white/20 transition border border-white/20 backdrop-blur-md flex items-center justify-center">
@@ -89,11 +91,11 @@
                 </x-dropdown>
             </div>
 
-            <!-- Notificaciones y Hamburger para Móvil -->
+            <!-- 📱 NOTIFICACIONES Y HAMBURGER PARA MÓVIL (UNIFICADOS Y LIMPIOS) -->
             <div class="flex items-center sm:hidden gap-2">
                 <!-- Notificaciones Móvil -->
                 <div class="relative" x-data="{ openNotifMob: false }">
-                    <button @click="openNotifMob = !openNotifMob" class="relative p-2 rounded-xl text-purple-100 hover:text-white bg-white/10 hover:bg-white/20 transition border border-white/20 flex items-center justify-center">
+                    <button @click="openNotifMob = !openNotifMob" class="relative p-2.5 rounded-xl text-purple-100 hover:text-white bg-white/10 hover:bg-white/20 transition border border-white/20 flex items-center justify-center">
                         🔔
                         @php
                             $mobUser = \App\Models\User::find(Auth::id());
@@ -128,9 +130,9 @@
                     </div>
                 </div>
 
-                <!-- Hamburger Button -->
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-xl text-purple-100 hover:text-white hover:bg-white/10 focus:outline-none transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                <!-- Hamburger Button Móvil -->
+                <button @click="open = ! open" class="p-2.5 rounded-xl text-purple-100 hover:text-white bg-white/10 hover:bg-white/20 transition border border-white/20 flex items-center justify-center">
+                    <svg class="h-5 w-5" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -139,34 +141,32 @@
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-purple-800 border-b border-purple-700">
-        <div class="pt-2 pb-3 space-y-1 px-4">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-white font-bold">
+    <!-- Responsive Navigation Menu (Desplegable) -->
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-purple-900/95 backdrop-blur-md border-b border-purple-700/50 shadow-2xl">
+        <div class="pt-3 pb-3 space-y-1 px-4">
+            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-sm font-bold transition {{ request()->routeIs('dashboard') ? 'bg-purple-700/80 text-white shadow-inner' : 'text-purple-200 hover:text-white hover:bg-purple-800/60' }}">
                 {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            </a>
+            <a href="{{ route('spots.index') }}" class="block px-3 py-2 rounded-xl text-sm font-bold transition {{ request()->routeIs('spots.*') ? 'bg-purple-700/80 text-white shadow-inner' : 'text-purple-200 hover:text-white hover:bg-purple-800/60' }}">
+                {{ __('Mapa Pet-Friendly') }}
+            </a>
         </div>
-        <div class="pt-4 pb-1 border-t border-purple-700 px-4">
-            <div class="font-medium text-base text-white flex items-center justify-between">
+
+        <div class="pt-4 pb-3 border-t border-purple-800 px-4">
+            <div class="font-bold text-base text-white">
                 <span>{{ Auth::user()->name }}</span>
-                @php
-                    $respUser = \App\Models\User::find(Auth::id());
-                    $unreadCountResp = $respUser ? $respUser->notifications()->whereNull('read_at')->count() : 0;
-                @endphp
-                @if($unreadCountResp > 0)
-                    <span class="bg-pink-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                        {{ $unreadCountResp }} nuevas
-                    </span>
-                @endif
             </div>
-            <div class="font-medium text-sm text-purple-200">{{ Auth::user()->email }}</div>
-            <div class="mt-3 space-y-1 pb-3">
+            <div class="font-medium text-xs text-purple-300 mt-0.5">{{ Auth::user()->email }}</div>
+
+            <div class="mt-3 space-y-1">
+                <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-xl text-xs font-semibold text-purple-200 hover:text-white hover:bg-purple-800/60 transition">
+                    {{ __('Perfil') }}
+                </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault(); this.closest('form').submit();" class="text-purple-200 font-medium">
+                    <button type="submit" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-pink-300 hover:text-white hover:bg-pink-900/40 transition">
                         {{ __('Cerrar Sesión') }}
-                    </x-responsive-nav-link>
+                    </button>
                 </form>
             </div>
         </div>

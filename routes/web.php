@@ -8,6 +8,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SpotController;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -53,6 +54,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Mapa Pet-Friendly
+    Route::get('/spots', [SpotController::class, 'index'])->name('spots.index');
+    Route::post('/spots', [SpotController::class, 'store'])->name('spots.store');
+    Route::get('/my-spots', [SpotController::class, 'mySpots'])->name('spots.my-spots');
+    Route::delete('/spots/{spot}', [SpotController::class, 'destroy'])->name('spots.destroy');
 
 });
 
