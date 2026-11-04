@@ -1,0 +1,170 @@
+<x-app-layout>
+    <div class="py-8 bg-purple-50/30 min-h-screen">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-6">
+
+            <!-- ================= COLUMNA IZQUIERDA: PERFIL Y MASCOTAS ================= -->
+            <div class="md:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-purple-600 text-white font-black rounded-2xl flex items-center justify-center text-xl shadow-md shadow-purple-600/20">
+                            {{ substr(Auth::user()->name, 0, 1) }}
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-slate-900 leading-tight">{{ Auth::user()->name }}</h2>
+                            <span class="text-xs text-purple-600 font-semibold">Humano Verificado 👤</span>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100 my-4">
+
+                    <!-- Mis Mascotas -->
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Mis Peludos 🐾</h3>
+                        <div class="space-y-3">
+                            @foreach($userPets as $pet)
+                                <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-purple-50/50 border border-purple-100/60">
+                                    <div class="w-10 h-10 bg-purple-200 rounded-xl flex items-center justify-center text-lg">
+                                        {{ $pet->species === 'cat' ? '🐱' : '🐶' }}
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800">{{ $pet->name }}</h4>
+                                        <p class="text-xs text-slate-500">{{ $pet->breed ?: 'Mestizo' }}</p>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= COLUMNA CENTRAL: FEED Y CREAR POST ================= -->
+            <div class="md:col-span-8 space-y-6">
+
+                <!-- Alerta de éxito -->
+                @if(session('success'))
+                    <div class="bg-purple-600 text-white p-4 rounded-2xl text-sm font-semibold shadow-lg shadow-purple-600/20 flex items-center gap-2">
+                        ✨ {{ session('success') }}
+                    </div>
+                @endif
+
+                <!-- Formulario para publicar un Ladrido -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100">
+                    <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+
+                        <!-- Seleccionar con qué mascota publicas -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Publicar como:</label>
+                            <select name="pet_id" class="w-full rounded-2xl border-slate-200 focus:border-purple-500 focus:ring-purple-500 text-sm bg-slate-50/50 py-2.5 px-3">
+                                @foreach($userPets as $pet)
+                                    <option value="{{ $pet->id }}">{{ $pet->name }} ({{ ucfirst($pet->species) }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Texto del post -->
+                        <div class="mb-4">
+                            <textarea name="content" rows="3" class="w-full rounded-2xl border-slate-200 focus:border-purple-500 focus:ring-purple-500 text-sm p-4 bg-slate-50/50 resize-none" placeholder="¿Qué travesura hizo hoy tu mascota? ¡Cuéntaselo a la manada! 🐕"></textarea>
+                            <x-input-error :messages="$errors->get('content')" class="mt-1" />
+                        </div>
+
+                        <!-- Botones inferiores del formulario -->
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <label class="cursor-pointer inline-flex items-center gap-2 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 px-4 py-2.5 rounded-xl transition">
+                                <span>📷 Añadir Foto</span>
+                                <input type="file" name="image" class="hidden" accept="image/*">
+                            </label>
+
+                            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm shadow-md shadow-purple-600/20 transition hover:scale-105">
+                                Publicar Ladrido 🚀
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Feed de Publicaciones -->
+                <div class="space-y-4">
+                    @forelse($posts as $post)
+                        <div x-data="{ openComments: false }" class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100 space-y-4">
+                            <!-- Cabecera del Post -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-lg">
+                                        {{ substr($post->pet->name, 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 leading-tight flex items-center gap-1.5">
+                                            {{ $post->pet->name }}
+                                            <span class="text-xs font-normal text-slate-400">por {{ $post->user->name }}</span>
+                                        </h4>
+                                        <span class="text-xs text-purple-600 font-medium">{{ $post->created_at->diffForHumans() }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contenido -->
+                            <p class="text-slate-700 text-sm leading-relaxed">{{ $post->content }}</p>
+
+                            @if($post->image)
+                                <div class="rounded-2xl overflow-hidden border border-slate-100 max-h-96">
+                                    <img src="{{ asset('storage/' . $post->image) }}" alt="Post image" class="w-full object-cover">
+                                </div>
+                            @endif
+
+                            <!-- Acciones -->
+                            <div class="flex items-center gap-3 pt-2 border-t border-slate-100">
+                                <!-- Botón de Like (Me Guau) -->
+                                <form action="{{ route('posts.like', $post) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl transition {{ $post->isLikedByUser(Auth::id()) ? 'bg-pink-500 text-white shadow-md shadow-pink-500/20' : 'bg-pink-50 text-pink-600 hover:bg-pink-100' }}">
+                                        <span>❤️ Me Guau</span>
+                                        <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ $post->isLikedByUser(Auth::id()) ? 'bg-white/20 text-white' : 'bg-white text-pink-600 shadow-sm' }}">{{ $post->likes_count }}</span>
+                                    </button>
+                                </form>
+
+                                <!-- Botón Desplegar Comentarios -->
+                                <button @click="openComments = !openComments" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl transition">
+                                    <span>💬 Comentarios</span>
+                                    <span class="bg-white px-1.5 py-0.5 rounded-full text-[10px] shadow-sm">{{ $post->comments->count() }}</span>
+                                </button>
+                            </div>
+
+                            <!-- Sección de Comentarios Desplegable -->
+                            <div x-show="openComments" x-cloak class="pt-4 space-y-3 border-t border-slate-100">
+                                <!-- Lista de Comentarios -->
+                                <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                    @forelse($post->comments as $comment)
+                                        <div class="bg-slate-50 p-3 rounded-2xl flex gap-3 text-xs">
+                                            <span class="font-extrabold text-purple-600">{{ $comment->pet->name }}:</span>
+                                            <span class="text-slate-700">{{ $comment->content }}</span>
+                                        </div>
+                                    @empty
+                                        <p class="text-xs text-slate-400 italic text-center py-2">Sé el primero en ladrar un comentario 🐾</p>
+                                    @endforelse
+                                </div>
+
+                                <!-- Formulario de nuevo comentario -->
+                                <form action="{{ route('comments.store', $post) }}" method="POST" class="flex gap-2 pt-2">
+                                    @csrf
+                                    <select name="pet_id" class="text-xs rounded-xl border-slate-200 bg-slate-50 py-2 px-2.5">
+                                        @foreach($userPets as $pet)
+                                            <option value="{{ $pet->id }}">{{ $pet->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" name="content" placeholder="Escribe un comentario..." class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2 px-3 focus:border-purple-500 focus:ring-purple-500" required>
+                                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
+                                        Responder
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @empty
+                        <!-- Empty State -->
+                    @endforelse
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</x-app-layout>
