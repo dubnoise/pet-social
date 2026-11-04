@@ -40,14 +40,18 @@ class PetController extends Controller
     }
 
     // Ver el perfil público/privado de una mascota y sus posts
-   public function show(Pet $pet): View
+   public function show(Pet $pet)
     {
-        $pet->load(['posts.user', 'posts.pet', 'posts.likes', 'posts.comments.pet', 'posts.comments.user', 'followers', 'following']);
+        // Cargar publicaciones con interacciones, seguidores y seguidos
+        $pet->load([
+            'posts' => fn($query) => $query->latest(),
+            'posts.user',
+            'posts.likes',
+            'posts.comments.pet',
+            'followers',
+            'following'
+        ]);
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $userPets = $user ? $user->pets : collect();
-
-        return view('pets.show', compact('pet', 'userPets'));
+        return view('pets.show', compact('pet'));
     }
 }

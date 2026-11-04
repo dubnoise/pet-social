@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -16,6 +17,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string $email
  * @method static \App\Models\User create(array $attributes = [])
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pet> $pets
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notification> $notifications
  */
 
 #[Fillable(['name', 'email', 'password'])]
@@ -38,8 +40,13 @@ class User extends Authenticatable
         ];
     }
 
-    public function pets()
+    public function pets(): HasMany
     {
         return $this->hasMany(Pet::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
     }
 }

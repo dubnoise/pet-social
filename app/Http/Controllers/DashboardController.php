@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Pet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +50,24 @@ class DashboardController extends Controller
 
         $posts = $postsQuery->get();
 
-        return view('dashboard', compact('posts', 'userPets', 'feedType'));
+        // 🌟 Lógica de Sugerencias de Amigos ("Peludos que quizás conozcas")
+        // IDs de mascotas que ya sigue la manada del usuario (o las suyas propias)
+        $followedPetIdsForSuggestions = [];
+        if (!empty($userPetIds)) {
+            $followedPetIdsForSuggestions = DB::table('follows')
+                ->whereIn('follower_pet_id', $userPetIds)
+                ->pluck('followed_pet_id')
+                ->toArray();
+        }
+
+        $excludePetIds = array_unique(array_merge($userPetIds, $followedPetIdsForSuggestions));
+
+        // Obtener hasta 5 mascotas sugeridas excluyendo las propias y las ya seguidas
+        $suggestedPets = Pet::whereNotIn('id', $excludePetIds)
+            ->inRandomOrder()
+            ->take(5)
+            ->get();
+
+        return view('dashboard', compact('posts', 'userPets', 'feedType', 'suggestedPets'));
     }
 }

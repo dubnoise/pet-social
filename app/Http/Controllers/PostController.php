@@ -46,4 +46,21 @@ class PostController extends Controller
 
         return redirect()->route('dashboard')->with('success', '¡Ladrido publicado con éxito! 🐾');
     }
+
+    public function destroy(Post $post): RedirectResponse
+    {
+        // Verificar que el usuario autenticado sea el creador de la publicación
+        if ($post->user_id !== Auth::id()) {
+            abort(403, 'Acción no autorizada.');
+        }
+
+        // Si tiene imagen adjunta, la borramos del storage
+        if ($post->image) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image);
+        }
+
+        $post->delete();
+
+        return back()->with('success', 'Publicación eliminada correctamente 🐾');
+    }
 }

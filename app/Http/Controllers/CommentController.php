@@ -24,6 +24,29 @@ class CommentController extends Controller
             'content' => $request->content,
         ]);
 
+        // Notificar al dueño de la publicación (siempre que no sea el mismo usuario)
+        if ($post->user_id !== Auth::id()) {
+            \App\Models\Notification::create([
+                'user_id' => $post->user_id,
+                'pet_id' => $post->pet_id,
+                'type' => 'comment',
+                'data' => Auth::user()->name . " ha comentado la publicación de {$post->pet->name} 💬",
+                'url' => route('dashboard'),
+            ]);
+        }
+
         return back()->with('success', '¡Comentario publicado! 🐾');
+    }
+
+    public function destroy(Comment $comment): RedirectResponse
+    {
+        // Verificar que el usuario sea el autor del comentario
+        if ($comment->user_id !== Auth::id()) {
+            abort(403, 'Acción no autorizada.');
+        }
+
+        $comment->delete();
+
+        return back();
     }
 }

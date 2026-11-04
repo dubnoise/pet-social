@@ -32,6 +32,17 @@ class FollowController extends Controller
             $message = "Has dejado de seguir a {$pet->name}.";
         } else {
             $followerPet->following()->attach($pet->id);
+
+            // Crear notificación para el dueño de la mascota seguida
+            if ($pet->user_id !== Auth::id()) {
+                \App\Models\Notification::create([
+                    'user_id' => $pet->user_id,
+                    'pet_id' => $pet->id,
+                    'type' => 'follow',
+                    'data' => "¡A {$pet->name} le ha empezado a seguir {$followerPet->name}!",
+                    'url' => route('pets.show', $pet),
+                ]);
+            }
             $message = "¡Ahora sigues a {$pet->name}!";
         }
 
