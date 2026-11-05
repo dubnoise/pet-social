@@ -29,249 +29,420 @@
                  this.activeImage = this.images[this.currentIndex];
              }
          }">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
+            x-data="{
+                tab: 'posts'
+            }">
 
-            <!-- Card de Perfil de la Mascota -->
-            <div class="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-3xl shadow-sm border border-purple-200 space-y-6">
-                <div class="flex flex-col sm:flex-row items-center gap-6">
+                    <!-- Card de Perfil de la Mascota -->
+                    <div class="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-3xl shadow-sm border border-purple-200 space-y-6">
+                        <div class="flex flex-col sm:flex-row items-center gap-6">
 
-                    <!-- 📸 INICIO: Avatar de la Mascota con soporte para imagen y cambio rápido -->
-                    <div class="relative group">
-                        <div class="w-24 h-24 bg-gradient-to-tr from-purple-600 to-indigo-500 text-white rounded-3xl flex items-center justify-center text-4xl font-black shadow-lg shadow-purple-500/30 border-2 border-white overflow-hidden">
-                            @if($pet->avatar)
-                                <img src="{{ asset('storage/' . $pet->avatar) }}" alt="{{ $pet->name }}" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition duration-300" @click="activeAvatar = '{{ asset('storage/' . $pet->avatar) }}'">
-                            @else
-                                <span class="cursor-default">{{ $pet->species === 'cat' ? '🐱' : '🐶' }}</span>
-                            @endif
-                        </div>
-
-                        <!-- Botón para cambiar foto (Visible solo si es el dueño de la mascota) -->
-                        @if(Auth::user()->pets->pluck('id')->contains($pet->id))
-                            <button @click="$refs.avatarInput.click()" class="absolute -bottom-2 -right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-xl shadow-md transition text-xs flex items-center justify-center cursor-pointer hover:scale-110" title="Cambiar foto de perfil">
-                                📷
-                            </button>
-
-                            <!-- Formulario oculto para enviar la foto automáticamente al seleccionarla -->
-                            <form action="{{ route('pets.avatar.update', $pet) }}" method="POST" enctype="multipart/form-data" class="hidden">
-                                @csrf
-                                <input type="file" x-ref="avatarInput" name="avatar" accept="image/*" @change="$el.form.submit()">
-                            </form>
-                        @endif
-                    </div>
-                    <!-- 📸 FIN DEL AVATAR -->
-
-                    <div class="flex-1 text-center sm:text-left space-y-2">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                                <h1 class="text-2xl font-black text-slate-900 leading-tight">{{ $pet->name }}</h1>
-                                <p class="text-xs font-semibold text-purple-700 bg-purple-100 px-3 py-1 rounded-full w-fit mx-auto sm:mx-0 mt-1 border border-purple-200">
-                                    {{ ucfirst($pet->species_in_spanish) }} • {{ $pet->breed ?: 'Mestizo' }}
-                                </p>
-                            </div>
-
-                            @if(Auth::user()->pets->pluck('id')->contains($pet->id))
-                                <span class="text-xs font-bold text-purple-600 bg-purple-50 px-4 py-2 rounded-xl border border-purple-200 self-center">
-                                    ¡Es tu peludo! 🐾
-                                </span>
-                            @else
-                                <form action="{{ route('pets.follow', $pet) }}" method="POST" class="flex flex-col sm:flex-row items-center gap-2 justify-center sm:justify-start">
-                                    @csrf
-                                    @if(Auth::user()->pets->isNotEmpty())
-                                        <select name="follower_pet_id" class="text-xs rounded-xl border-purple-200 bg-purple-50 py-2 px-2.5 focus:ring-purple-500 focus:border-purple-500 font-medium text-purple-900">
-                                            @foreach(Auth::user()->pets as $myPet)
-                                                <option value="{{ $myPet->id }}">Publicar como {{ $myPet->name }}</option>
-                                            @endforeach
-                                        </select>
-
-                                        @php
-                                            $currentPet = Auth::user()->pets->first();
-                                            $isFollowing = $currentPet ? $currentPet->isFollowing($pet) : false;
-                                        @endphp
-
-                                        <button type="submit" class="text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition hover:scale-105 {{ $isFollowing ? 'bg-purple-100 text-purple-700 border border-purple-300 hover:bg-purple-200' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-purple-500/20' }}">
-                                            {{ $isFollowing ? '✓ Siguiendo Manada' : '+ Seguir Manada' }}
-                                        </button>
+                            <!-- 📸 INICIO: Avatar de la Mascota con soporte para imagen y cambio rápido -->
+                            <div class="relative group">
+                                <div class="w-24 h-24 bg-gradient-to-tr from-purple-600 to-indigo-500 text-white rounded-3xl flex items-center justify-center text-4xl font-black shadow-lg shadow-purple-500/30 border-2 border-white overflow-hidden">
+                                    @if($pet->avatar)
+                                        <img src="{{ asset('storage/' . $pet->avatar) }}" alt="{{ $pet->name }}" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition duration-300" @click="activeAvatar = '{{ asset('storage/' . $pet->avatar) }}'">
+                                    @else
+                                        <span class="cursor-default">{{ $pet->species === 'cat' ? '🐱' : '🐶' }}</span>
                                     @endif
-                                </form>
-                            @endif
-                        </div>
-                        <p class="text-xs text-slate-500 pt-1">Humano responsable: <span class="font-bold text-slate-700">{{ $pet->user->name }}</span></p>
-                    </div>
-                </div>
-
-                <!-- Estadisticas -->
-                <div class="grid grid-cols-3 gap-4 pt-6 border-t border-purple-100 text-center">
-                    <div class="bg-purple-50/50 p-3 rounded-2xl border border-purple-100">
-                        <span class="block text-xl font-black text-purple-700">{{ $pet->posts->count() }}</span>
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Publicaciones</span>
-                    </div>
-                    <div class="bg-purple-50/50 p-3 rounded-2xl border border-purple-100">
-                        <span class="block text-xl font-black text-purple-700">{{ $pet->followers->count() }}</span>
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Seguidores</span>
-                    </div>
-                    <div class="bg-purple-50/50 p-3 rounded-2xl border border-purple-100">
-                        <span class="block text-xl font-black text-purple-700">{{ $pet->following->count() }}</span>
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Seguidos</span>
-                    </div>
-                </div>
-
-                <!-- Insignias -->
-                <div class="pt-4 border-t border-purple-100 space-y-3" x-data="{ activeBadge: null }">
-                    <h3 class="font-black text-xs uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
-                        <span>🏆</span> Vitrina de Logros e Insignias
-                    </h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        @forelse($pet->badges as $badge)
-                            <div @click="activeBadge = { name: '{{ $badge->name }}', description: '{{ $badge->description }}', icon: '{{ $badge->icon }}' }"
-                                class="bg-purple-50/70 border border-purple-100 p-3 rounded-2xl text-center space-y-1 hover:scale-105 transition shadow-sm cursor-pointer group">
-                                <span class="text-2xl block group-hover:scale-110 transition">{{ $badge->icon }}</span>
-                                <h4 class="font-bold text-xs text-purple-900 truncate">{{ $badge->name }}</h4>
-                            </div>
-                        @empty
-                            <p class="text-xs text-slate-400 col-span-full text-center py-3">Aún no ha desbloqueado ninguna insignia. ¡Participa más en la comunidad! 🐾</p>
-                        @endforelse
-                    </div>
-
-                    <template x-if="activeBadge">
-                        <div class="fixed inset-0 bg-purple-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click.self="activeBadge = null">
-                            <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-purple-100 text-center space-y-4 relative animate-in fade-in zoom-in duration-200">
-                                <button @click="activeBadge = null" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
-                                <div class="w-16 h-16 bg-purple-100 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-inner">
-                                    <span x-text="activeBadge.icon"></span>
                                 </div>
-                                <div class="space-y-1">
-                                    <h4 class="font-black text-base text-purple-900" x-text="activeBadge.name"></h4>
-                                    <p class="text-xs text-slate-600 leading-relaxed" x-text="activeBadge.description"></p>
+
+                                <!-- Botón para cambiar foto (Visible solo si es el dueño de la mascota) -->
+                                @if(Auth::user()->pets->pluck('id')->contains($pet->id))
+                                    <button @click="$refs.avatarInput.click()" class="absolute -bottom-2 -right-2 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-xl shadow-md transition text-xs flex items-center justify-center cursor-pointer hover:scale-110" title="Cambiar foto de perfil">
+                                        📷
+                                    </button>
+
+                                    <!-- Formulario oculto para enviar la foto automáticamente al seleccionarla -->
+                                    <form action="{{ route('pets.avatar.update', $pet) }}" method="POST" enctype="multipart/form-data" class="hidden">
+                                        @csrf
+                                        <input type="file" x-ref="avatarInput" name="avatar" accept="image/*" @change="$el.form.submit()">
+                                    </form>
+                                @endif
+                            </div>
+                            <!-- 📸 FIN DEL AVATAR -->
+
+                            <div class="flex-1 text-center sm:text-left space-y-2">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <h1 class="text-2xl font-black text-slate-900 leading-tight">{{ $pet->name }}</h1>
+                                        <p class="text-xs font-semibold text-purple-700 bg-purple-100 px-3 py-1 rounded-full w-fit mx-auto sm:mx-0 mt-1 border border-purple-200">
+                                            {{ ucfirst($pet->species_in_spanish) }} {{ $pet->breed ?: 'Mestizo' }}
+                                        </p>
+                                    </div>
+
+                                    @if(Auth::user()->pets->pluck('id')->contains($pet->id))
+                                        <span class="text-xs font-bold text-purple-600 bg-purple-50 px-4 py-2 rounded-xl border border-purple-200 self-center">
+                                            ¡Es tu peludo! 🐾
+                                        </span>
+                                    @else
+                                        <form action="{{ route('pets.follow', $pet) }}" method="POST" class="flex flex-col sm:flex-row items-center gap-2 justify-center sm:justify-start">
+                                            @csrf
+                                            @if(Auth::user()->pets->isNotEmpty())
+                                                <select name="follower_pet_id" class="text-xs rounded-xl border-purple-200 bg-purple-50 py-2 px-2.5 focus:ring-purple-500 focus:border-purple-500 font-medium text-purple-900">
+                                                    @foreach(Auth::user()->pets as $myPet)
+                                                        <option value="{{ $myPet->id }}">Publicar como {{ $myPet->name }}</option>
+                                                    @endforeach
+                                                </select>
+
+                                                @php
+                                                    $currentPet = Auth::user()->pets->first();
+                                                    $isFollowing = $currentPet ? $currentPet->isFollowing($pet) : false;
+                                                @endphp
+
+                                                <button type="submit" class="text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition hover:scale-105 {{ $isFollowing ? 'bg-purple-100 text-purple-700 border border-purple-300 hover:bg-purple-200' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-purple-500/20' }}">
+                                                    {{ $isFollowing ? '✓ Siguiendo Manada' : '+ Seguir Manada' }}
+                                                </button>
+                                            @endif
+                                        </form>
+                                    @endif
                                 </div>
-                                <button @click="activeBadge = null" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md shadow-purple-600/20">
-                                    ¡Genial! 🐾
-                                </button>
+                                <p class="text-xs text-slate-500 pt-1">Humano responsable: <span class="font-bold text-slate-700">{{ $pet->user->name }}</span></p>
                             </div>
                         </div>
-                    </template>
-                </div>
-            </div>
 
-            <!-- Pestañas -->
-            <div x-data="{ tab: 'posts' }" class="space-y-6">
-                <div class="flex flex-wrap items-center gap-2 bg-white/90 backdrop-blur-md p-2 rounded-2xl border border-purple-200 shadow-sm w-fit mx-auto sm:mx-0">
-                    <button @click="tab = 'posts'" :class="tab === 'posts' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
-                        📸 Publicaciones ({{ $pet->posts->count() }})
-                    </button>
-                    <button @click="tab = 'album'" :class="tab === 'album' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
-                        🖼️ Álbum ({{ $pet->posts->whereNotNull('image')->count() }})
-                    </button>
-                    <button @click="tab = 'followers'" :class="tab === 'followers' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
-                        🐾 Seguidores ({{ $pet->followers->count() }})
-                    </button>
-                    <button @click="tab = 'following'" :class="tab === 'following' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
-                        🐕 Seguidos ({{ $pet->following->count() }})
-                    </button>
-                </div>
+                        <!-- Estadisticas (Con interactividad al hacer click en Seguidores y Seguidos) -->
+                        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-purple-100 text-center">
+                            <div @click="tab = 'posts'; document.getElementById('pet-tabs-section').scrollIntoView({ behavior: 'smooth' })"
+                                class="bg-purple-50/50 p-3 rounded-2xl border border-purple-100 cursor-pointer hover:bg-purple-100/60 transition group">
+                                <span class="block text-xl font-black text-purple-700 group-hover:scale-105 transition">{{ $pet->posts->count() }}</span>
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Publicaciones</span>
+                            </div>
 
-                <!-- Publicaciones -->
-                <div x-show="tab === 'posts'" class="space-y-4">
-                    @forelse($pet->posts as $post)
-                        <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-purple-200 space-y-4">
-                            <span class="text-xs text-purple-600 font-semibold">{{ $post->created_at->diffForHumans() }}</span>
-                            <p class="text-slate-800 text-sm leading-relaxed">{{ $post->content }}</p>
+                            <div @click="tab = 'followers'; document.getElementById('pet-tabs-section').scrollIntoView({ behavior: 'smooth' })"
+                                class="bg-purple-50/50 p-3 rounded-2xl border border-purple-100 cursor-pointer hover:bg-purple-100/60 transition group shadow-sm">
+                                <span class="block text-xl font-black text-purple-700 group-hover:scale-105 transition">{{ $pet->followers->count() }}</span>
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Seguidores</span>
+                            </div>
 
-                            @if($post->image)
-                                <div class="rounded-2xl overflow-hidden border border-purple-100 max-h-96 cursor-pointer group relative"
-                                     @click="openGallery('{{ asset('storage/' . $post->image) }}')">
-                                    <img src="{{ asset('storage/' . $post->image) }}" alt="Post image" class="w-full object-cover group-hover:scale-105 transition duration-300">
-                                    <div class="absolute inset-0 bg-purple-950/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                        <span class="bg-white/90 text-purple-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-md backdrop-blur-sm">🔍 Ampliar imagen</span>
+                            <div @click="tab = 'following'; document.getElementById('pet-tabs-section').scrollIntoView({ behavior: 'smooth' })"
+                                class="bg-purple-50/50 p-3 rounded-2xl border border-purple-100 cursor-pointer hover:bg-purple-100/60 transition group shadow-sm">
+                                <span class="block text-xl font-black text-purple-700 group-hover:scale-105 transition">{{ $pet->following->count() }}</span>
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Seguidos</span>
+                            </div>
+                        </div>
+
+                        <!-- Insignias -->
+                        <div class="pt-4 border-t border-purple-100 space-y-3" x-data="{ activeBadge: null }">
+                            <h3 class="font-black text-xs uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
+                                <span>🏆</span> Vitrina de Logros e Insignias
+                            </h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                @forelse($pet->badges as $badge)
+                                    <div @click="activeBadge = { name: '{{ $badge->name }}', description: '{{ $badge->description }}', icon: '{{ $badge->icon }}' }"
+                                        class="bg-purple-50/70 border border-purple-100 p-3 rounded-2xl text-center space-y-1 hover:scale-105 transition shadow-sm cursor-pointer group">
+                                        <span class="text-2xl block group-hover:scale-110 transition">{{ $badge->icon }}</span>
+                                        <h4 class="font-bold text-xs text-purple-900 truncate">{{ $badge->name }}</h4>
+                                    </div>
+                                @empty
+                                    <p class="text-xs text-slate-400 col-span-full text-center py-3">Aún no ha desbloqueado ninguna insignia. ¡Participa más en la comunidad! 🐾</p>
+                                @endforelse
+                            </div>
+
+                            <template x-if="activeBadge">
+                                <div class="fixed inset-0 bg-purple-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click.self="activeBadge = null">
+                                    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-purple-100 text-center space-y-4 relative animate-in fade-in zoom-in duration-200">
+                                        <button @click="activeBadge = null" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
+                                        <div class="w-16 h-16 bg-purple-100 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-inner">
+                                            <span x-text="activeBadge.icon"></span>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <h4 class="font-black text-base text-purple-900" x-text="activeBadge.name"></h4>
+                                            <p class="text-xs text-slate-600 leading-relaxed" x-text="activeBadge.description"></p>
+                                        </div>
+                                        <button @click="activeBadge = null" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md shadow-purple-600/20">
+                                            ¡Genial! 🐾
+                                        </button>
                                     </div>
                                 </div>
-                            @endif
-
-                            <div class="flex items-center gap-3 pt-2 border-t border-purple-100">
-                                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-pink-600 bg-pink-50 px-3.5 py-2 rounded-xl border border-pink-100">
-                                    ❤️ {{ $post->likes->count() }} Me Guau
-                                </span>
-                                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 px-3.5 py-2 rounded-xl">
-                                    💬 {{ $post->comments->count() }} Comentarios
-                                </span>
-                            </div>
+                            </template>
                         </div>
-                    @empty
-                        <div class="bg-white/90 backdrop-blur-md p-8 rounded-3xl text-center border border-purple-200">
-                            <p class="text-slate-500 text-sm">Esta mascota aún no ha compartido ninguna travesura 🐾</p>
-                        </div>
-                    @endforelse
-                </div>
-
-                <!-- Álbum -->
-                <div x-show="tab === 'album'" x-cloak class="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-purple-200 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-black text-sm uppercase tracking-wider text-purple-900 flex items-center gap-2">
-                            <span>📸</span> Galería de Recuerdos
-                        </h3>
-                        <span class="text-xs font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full">
-                            {{ $pet->posts->whereNotNull('image')->count() }} fotos
-                        </span>
                     </div>
 
-                    @php $galleryPhotos = $pet->posts->whereNotNull('image'); @endphp
+                    <!-- Pestañas (Con ID unificado para el scroll) -->
+                    <div id="pet-tabs-section" class="space-y-6">
+                        <div class="flex flex-wrap items-center gap-2 bg-white/90 backdrop-blur-md p-2 rounded-2xl border border-purple-200 shadow-sm w-fit mx-auto sm:mx-0">
+                            <button @click="tab = 'posts'" :class="tab === 'posts' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
+                                📸 Publicaciones ({{ $pet->posts->count() }})
+                            </button>
+                            <button @click="tab = 'album'" :class="tab === 'album' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
+                                🖼️ Álbum ({{ $pet->posts->whereNotNull('image')->count() }})
+                            </button>
+                            <button @click="tab = 'followers'" :class="tab === 'followers' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
+                                🐾 Seguidores ({{ $pet->followers->count() }})
+                            </button>
+                            <button @click="tab = 'following'" :class="tab === 'following' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20' : 'text-slate-600 hover:bg-purple-50'" class="px-4 py-2.5 rounded-xl text-xs font-bold transition">
+                                🐕 Seguidos ({{ $pet->following->count() }})
+                            </button>
+                        </div>
 
-                    @if($galleryPhotos->count() > 0)
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            @foreach($galleryPhotos as $photo)
-                                <div class="aspect-square rounded-2xl overflow-hidden border border-purple-100 bg-slate-50 cursor-pointer group relative shadow-sm"
-                                     @click="openGallery('{{ asset('storage/' . $photo->image) }}')">
-                                    <img src="{{ asset('storage/' . $photo->image) }}" alt="Foto del álbum" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-                                    <div class="absolute inset-0 bg-purple-950/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center backdrop-blur-[2px]">
-                                        <span class="bg-white/90 text-purple-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-md">🔍 Ampliar</span>
+                        <!-- Publicaciones -->
+                        <div x-show="tab === 'posts'" class="space-y-4">
+                            @forelse($pet->posts as $post)
+                                <div x-data="{ openComments: false }" class="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-purple-200 space-y-4">
+
+                                    <!-- Cabecera del Post -->
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-gradient-to-tr from-purple-600 to-indigo-500 text-white rounded-2xl flex items-center justify-center font-bold text-lg overflow-hidden border border-purple-200">
+                                                @if($post->pet->avatar)
+                                                    <img src="{{ asset('storage/' . $post->pet->avatar) }}" alt="{{ $post->pet->name }}" class="w-full h-full object-cover">
+                                                @else
+                                                    <span>{{ $post->pet->species === 'cat' ? '🐱' : '🐶' }}</span>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <h4 class="font-bold text-slate-900 leading-tight">
+                                                    {{ $post->pet->name }}
+                                                </h4>
+                                                <span class="text-xs text-purple-600 font-medium">{{ $post->created_at->diffForHumans() }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Botón Borrar (si es el dueño) -->
+                                        @if($post->user_id === Auth::id())
+                                            <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres borrar este ladrido? 🐾');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-slate-400 hover:text-pink-600 p-1.5 rounded-xl hover:bg-pink-50 transition text-xs font-bold flex items-center gap-1">
+                                                    🗑️ <span class="hidden sm:inline">Borrar</span>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
+
+                                    <!-- Contenido -->
+                                    <p class="text-slate-800 text-sm leading-relaxed">{{ $post->content }}</p>
+
+                                    <!-- Imagen Adjunta -->
+                                    @if($post->image)
+                                        <div class="rounded-2xl overflow-hidden border border-purple-100 max-h-96 cursor-pointer group relative"
+                                            @click="openGallery('{{ asset('storage/' . $post->image) }}')">
+                                            <img src="{{ asset('storage/' . $post->image) }}" alt="Post image" class="w-full object-cover group-hover:scale-105 transition duration-300">
+                                            <div class="absolute inset-0 bg-purple-950/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                                <span class="bg-white/90 text-purple-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-md backdrop-blur-sm">🔍 Ampliar imagen</span>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <!-- Acciones (Likes y Comentarios) -->
+                                    <div class="flex items-center gap-3 pt-2 border-t border-purple-100">
+
+                                        <!-- Botón de Like (Me Guau) dinámico sin recarga -->
+                                        <div x-data="{
+                                            liked: {{ $post->isLikedByUser(Auth::id()) ? 'true' : 'false' }},
+                                            likesCount: {{ $post->likes->count() }},
+                                            async toggleLike(url) {
+                                                let response = await fetch(url, {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                        'Accept': 'application/json',
+                                                        'Content-Type': 'application/json'
+                                                    }
+                                                });
+                                                let data = await response.json();
+                                                if (data.success) {
+                                                    this.liked = data.liked;
+                                                    this.likesCount = data.likes_count;
+                                                }
+                                            }
+                                        }">
+                                            <button @click="toggleLike('{{ route('posts.like', $post) }}')"
+                                                    type="button"
+                                                    class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-sm cursor-pointer"
+                                                    :class="liked ? 'bg-pink-500 text-white shadow-pink-500/20' : 'bg-pink-50 text-pink-600 hover:bg-pink-100'">
+                                                <span>❤️ Me Guau</span>
+                                                <span class="px-1.5 py-0.5 rounded-full text-[10px]"
+                                                    :class="liked ? 'bg-white/20 text-white' : 'bg-white text-pink-600 shadow-sm'"
+                                                    x-text="likesCount"></span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Botón Desplegar Comentarios -->
+                                        <button @click="openComments = !openComments" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl transition cursor-pointer">
+                                            <span>💬 Comentarios</span>
+                                            <span class="bg-white px-1.5 py-0.5 rounded-full text-[10px] shadow-sm">{{ $post->comments->count() }}</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Sección de Comentarios Desplegable -->
+                                    <div x-show="openComments" x-cloak class="pt-4 space-y-3 border-t border-purple-100"
+                                        x-data="{
+                                            comments: @js($post->comments->map(fn($c) => [
+                                                'id' => $c->id,
+                                                'content' => $c->content,
+                                                'created_at' => $c->created_at->diffForHumans(),
+                                                'pet_name' => $c->pet->name,
+                                                'pet_url' => route('pets.show', $c->pet),
+                                                'pet_avatar' => $c->pet->avatar ? asset('storage/' . $c->pet->avatar) : null,
+                                                'pet_species' => $c->pet->species,
+                                                'can_delete' => $c->user_id === Auth::id(),
+                                                'delete_url' => route('comments.destroy', $c)
+                                            ])),
+                                            visibleLimit: 5,
+                                            newContent: '',
+                                            selectedPetId: '{{ $userPets->first()?->id }}',
+                                            async submitComment(postId, storeUrl) {
+                                                if (!this.newContent.trim()) return;
+                                                let formData = new FormData();
+                                                formData.append('_token', '{{ csrf_token() }}');
+                                                formData.append('content', this.newContent);
+                                                formData.append('pet_id', this.selectedPetId);
+
+                                                let response = await fetch(storeUrl, {
+                                                    method: 'POST',
+                                                    headers: { 'Accept': 'application/json' },
+                                                    body: formData
+                                                });
+                                                let data = await response.json();
+                                                if (data.success) {
+                                                    this.comments.push(data.comment);
+                                                    this.newContent = '';
+                                                    this.visibleLimit = this.comments.length;
+                                                }
+                                            }
+                                        }">
+
+                                        <!-- Lista de Comentarios con Tope de 5 -->
+                                        <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                            <template x-for="(comment, index) in comments.slice(0, visibleLimit)" :key="comment.id">
+                                                <div class="bg-slate-50 p-3 rounded-2xl flex items-center justify-between text-xs">
+                                                    <div class="flex items-center gap-2.5">
+                                                        <a :href="comment.pet_url" class="w-8 h-8 rounded-full overflow-hidden bg-purple-100 flex-shrink-0 flex items-center justify-center font-bold text-purple-700 border border-purple-200">
+                                                            <template x-if="comment.pet_avatar">
+                                                                <img :src="comment.pet_avatar" class="w-full h-full object-cover">
+                                                            </template>
+                                                            <template x-if="!comment.pet_avatar">
+                                                                <span x-text="comment.pet_species === 'cat' ? '🐱' : '🐶'"></span>
+                                                            </template>
+                                                        </a>
+
+                                                        <div class="flex flex-col">
+                                                            <div class="flex items-center gap-1.5">
+                                                                <a :href="comment.pet_url" class="font-extrabold text-purple-600 hover:text-purple-800 transition" x-text="comment.pet_name + ':'"></a>
+                                                                <span class="text-slate-700" x-text="comment.content"></span>
+                                                            </div>
+                                                            <span class="text-[10px] text-slate-400 font-medium" x-text="comment.created_at"></span>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Botón Eliminar Comentario -->
+                                                    <template x-if="comment.can_delete">
+                                                        <form :action="comment.delete_url" method="POST" class="inline" @submit.prevent="if(confirm('¿Borrar comentario?')) { $el.submit(); }">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit" class="text-[10px] text-slate-400 hover:text-pink-600 font-semibold transition ml-2">Eliminar</button>
+                                                        </form>
+                                                    </template>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="comments.length === 0">
+                                                <p class="text-xs text-slate-400 italic text-center py-2">Sé el primero en ladrar un comentario 🐾</p>
+                                            </template>
+                                        </div>
+
+                                        <!-- Botón Mostrar más comentarios -->
+                                        <div class="text-center" x-show="comments.length > visibleLimit">
+                                            <button @click="visibleLimit += 5" class="text-[11px] font-bold text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition cursor-pointer">
+                                                Ver más comentarios (<span x-text="comments.length - visibleLimit"></span> más) 🔽
+                                            </button>
+                                        </div>
+
+                                        <!-- Formulario de nuevo comentario con AJAX -->
+                                        <form @submit.prevent="submitComment({{ $post->id }}, '{{ route('comments.store', $post) }}')" class="flex gap-2 pt-2">
+                                            <select x-model="selectedPetId" class="text-xs rounded-xl border-purple-200 bg-purple-50 py-2 px-2.5 font-medium text-purple-900">
+                                                @foreach($userPets as $myPet)
+                                                    <option value="{{ $myPet->id }}">{{ $myPet->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" x-model="newContent" placeholder="Escribe un comentario..." class="w-full text-xs rounded-xl border-purple-200 bg-purple-50 py-2 px-3 focus:border-purple-500 focus:ring-purple-500" required>
+                                            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">
+                                                Responder
+                                            </button>
+                                        </form>
+                                    </div>
+
                                 </div>
-                            @endforeach
+                            @empty
+                                <div class="bg-white/90 backdrop-blur-md p-8 rounded-3xl text-center border border-purple-200">
+                                    <p class="text-slate-500 text-sm">Esta mascota aún no ha compartido ninguna travesura 🐾</p>
+                                </div>
+                            @endforelse
                         </div>
-                    @else
-                        <div class="text-center py-10 bg-purple-50/50 rounded-2xl border border-dashed border-purple-200">
-                            <span class="text-3xl block mb-2">🐾</span>
-                            <p class="text-xs text-slate-500 font-medium">Aún no hay fotos en el álbum de esta mascota.</p>
-                        </div>
-                    @endif
-                </div>
 
-                <!-- Seguidores / Seguidos -->
-                <div x-show="tab === 'followers'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    @forelse($pet->followers as $follower)
-                        <a href="{{ route('pets.show', $follower) }}" class="flex items-center gap-4 p-4 rounded-3xl bg-white/90 backdrop-blur-md border border-purple-200 hover:border-purple-400 hover:shadow-md transition group">
-                            <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-xl font-bold group-hover:scale-105 transition">
-                                {{ $follower->species === 'cat' ? '🐱' : '🐶' }}
+                        <!-- Álbum -->
+                        <div x-show="tab === 'album'" x-cloak class="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-purple-200 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-black text-sm uppercase tracking-wider text-purple-900 flex items-center gap-2">
+                                    <span>📸</span> Galería de Recuerdos
+                                </h3>
+                                <span class="text-xs font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full">
+                                    {{ $pet->posts->whereNotNull('image')->count() }} fotos
+                                </span>
                             </div>
-                            <div>
-                                <h4 class="font-bold text-slate-900 group-hover:text-purple-600 transition">{{ $follower->name }}</h4>
-                                <p class="text-xs text-purple-600 font-medium">{{ $follower->breed ?: 'Mestizo' }}</p>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="col-span-full bg-white/90 backdrop-blur-md p-8 rounded-3xl text-center border border-purple-200">
-                            <p class="text-slate-500 text-sm">Aún no tiene seguidores en su manada 🐕</p>
-                        </div>
-                    @endforelse
-                </div>
 
-                <div x-show="tab === 'following'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    @forelse($pet->following as $followed)
-                        <a href="{{ route('pets.show', $followed) }}" class="flex items-center gap-4 p-4 rounded-3xl bg-white/90 backdrop-blur-md border border-purple-200 hover:border-purple-400 hover:shadow-md transition group">
-                            <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-xl font-bold group-hover:scale-105 transition">
-                                {{ $followed->species === 'cat' ? '🐱' : '🐶' }}
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-slate-900 group-hover:text-purple-600 transition">{{ $followed->name }}</h4>
-                                <p class="text-xs text-purple-600 font-medium">{{ $followed->breed ?: 'Mestizo' }}</p>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="col-span-full bg-white/90 backdrop-blur-md p-8 rounded-3xl text-center border border-purple-200">
-                            <p class="text-slate-500 text-sm">No sigue a ninguna mascota todavía 🐾</p>
+                            @php $galleryPhotos = $pet->posts->whereNotNull('image'); @endphp
+
+                            @if($galleryPhotos->count() > 0)
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    @foreach($galleryPhotos as $photo)
+                                        <div class="aspect-square rounded-2xl overflow-hidden border border-purple-100 bg-slate-50 cursor-pointer group relative shadow-sm"
+                                            @click="openGallery('{{ asset('storage/' . $photo->image) }}')">
+                                            <img src="{{ asset('storage/' . $photo->image) }}" alt="Foto del álbum" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                                            <div class="absolute inset-0 bg-purple-950/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center backdrop-blur-[2px]">
+                                                <span class="bg-white/90 text-purple-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-md">🔍 Ampliar</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-10 bg-purple-50/50 rounded-2xl border border-dashed border-purple-200">
+                                    <span class="text-3xl block mb-2">🐾</span>
+                                    <p class="text-xs text-slate-500 font-medium">Aún no hay fotos en el álbum de esta mascota.</p>
+                                </div>
+                            @endif
                         </div>
-                    @endforelse
-                </div>
-            </div>
+
+                        <!-- Seguidores -->
+                        <div x-show="tab === 'followers'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            @forelse($pet->followers as $follower)
+                                <a href="{{ route('pets.show', $follower) }}" class="flex items-center gap-4 p-4 rounded-3xl bg-white/90 backdrop-blur-md border border-purple-200 hover:border-purple-400 hover:shadow-md transition group">
+                                    <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-xl font-bold group-hover:scale-105 transition">
+                                        {{ $follower->species === 'cat' ? '🐱' : '🐶' }}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 group-hover:text-purple-600 transition">{{ $follower->name }}</h4>
+                                        <p class="text-xs text-purple-600 font-medium">{{ $follower->breed ?: 'Mestizo' }}</p>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="col-span-full bg-white/90 backdrop-blur-md p-8 rounded-3xl text-center border border-purple-200">
+                                    <p class="text-slate-500 text-sm">Aún no tiene seguidores en su manada 🐕</p>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <!-- Seguidos -->
+                        <div x-show="tab === 'following'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            @forelse($pet->following as $followed)
+                                <a href="{{ route('pets.show', $followed) }}" class="flex items-center gap-4 p-4 rounded-3xl bg-white/90 backdrop-blur-md border border-purple-200 hover:border-purple-400 hover:shadow-md transition group">
+                                    <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-xl font-bold group-hover:scale-105 transition">
+                                        {{ $followed->species === 'cat' ? '🐱' : '🐶' }}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 group-hover:text-purple-600 transition">{{ $followed->name }}</h4>
+                                        <p class="text-xs text-purple-600 font-medium">{{ $followed->breed ?: 'Mestizo' }}</p>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="col-span-full bg-white/90 backdrop-blur-md p-8 rounded-3xl text-center border border-purple-200">
+                                    <p class="text-slate-500 text-sm">No sigue a ninguna mascota todavía 🐾</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
         </div>
 
         <!-- 🌟 VISOR DE GALERÍA AVANZADO (Con Siguiente/Anterior, Lista de Miniaturas inferior y Zoom con arrastre) -->

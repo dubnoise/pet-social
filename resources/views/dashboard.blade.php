@@ -17,20 +17,31 @@
 
                     <hr class="border-purple-50 my-4">
 
-                    <!-- Mis Mascotas -->
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-purple-900/60">Mis Peludos 🐾</h3>
+                    <!-- Mis Mascotas (Con opción de desplegar/contraer) -->
+                    <div x-data="{ showPets: false }" class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <button @click="showPets = !showPets" class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-purple-900/60 hover:text-purple-900 transition focus:outline-none">
+                                <span>Mis Peludos 🐾</span>
+                                <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-[10px]" x-text="{{ count($userPets) }}"></span>
+                                <span class="transition-transform duration-200" :class="showPets ? 'rotate-180' : ''">▼</span>
+                            </button>
+
                             <a href="{{ route('pets.create') }}" class="text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-3.5 py-1.5 rounded-xl shadow-sm transition hover:scale-105">
                                 + Añadir
                             </a>
                         </div>
 
-                        <div class="space-y-3">
+                        <!-- Lista desplegable con transición -->
+                        <div x-show="showPets" x-collapse x-cloak class="space-y-3 pt-1">
                             @forelse($userPets as $pet)
                                 <a href="{{ route('pets.show', $pet) }}" class="flex items-center gap-3 p-3 rounded-2xl bg-purple-50/40 border border-purple-100 hover:bg-purple-100/50 transition block shadow-sm">
-                                    <div class="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center text-lg font-bold">
-                                        {{ $pet->species === 'cat' ? '🐱' : '🐶' }}
+                                    <!-- 🐾 Avatar de "Mis Peludos" -->
+                                    <div class="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center text-lg font-bold overflow-hidden border border-purple-200 flex-shrink-0">
+                                        @if($pet->avatar)
+                                            <img src="{{ asset('storage/' . $pet->avatar) }}" alt="{{ $pet->name }}" class="w-full h-full object-cover">
+                                        @else
+                                            <span>{{ $pet->species === 'cat' ? '🐱' : '🐶' }}</span>
+                                        @endif
                                     </div>
                                     <div>
                                         <h4 class="text-sm font-bold text-slate-800">{{ $pet->name }}</h4>
@@ -56,8 +67,13 @@
                         @forelse($suggestedPets as $suggested)
                             <div class="flex items-center justify-between gap-3 p-2 rounded-2xl hover:bg-purple-50/50 transition">
                                 <div class="flex items-center gap-3">
-                                    <a href="{{ route('pets.show', $suggested) }}" class="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-bold text-base hover:scale-105 transition shadow-inner">
-                                        {{ $suggested->species === 'cat' ? '🐱' : '🐶' }}
+                                    <!-- 🐾 Avatar de "Sugerencias" -->
+                                    <a href="{{ route('pets.show', $suggested) }}" class="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-bold text-base hover:scale-105 transition shadow-inner overflow-hidden border border-purple-200 flex-shrink-0">
+                                        @if($suggested->avatar)
+                                            <img src="{{ asset('storage/' . $suggested->avatar) }}" alt="{{ $suggested->name }}" class="w-full h-full object-cover">
+                                        @else
+                                            <span>{{ $suggested->species === 'cat' ? '🐱' : '🐶' }}</span>
+                                        @endif
                                     </a>
                                     <div>
                                         <a href="{{ route('pets.show', $suggested) }}" class="font-bold text-xs text-slate-900 hover:text-purple-600 transition block">
@@ -135,9 +151,13 @@
                             <!-- Cabecera del Post -->
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <!-- Enlace en el Avatar -->
-                                    <a href="{{ route('pets.show', $post->pet) }}" class="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-lg hover:scale-105 transition">
-                                        {{ substr($post->pet->name, 0, 1) }}
+                                    <!-- 🐾 Avatar de la mascota en el Post -->
+                                    <a href="{{ route('pets.show', $post->pet) }}" class="w-10 h-10 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center font-bold text-lg hover:scale-105 transition overflow-hidden border border-purple-200 flex-shrink-0">
+                                        @if($post->pet->avatar)
+                                            <img src="{{ asset('storage/' . $post->pet->avatar) }}" alt="{{ $post->pet->name }}" class="w-full h-full object-cover">
+                                        @else
+                                            <span>{{ $post->pet->species === 'cat' ? '🐱' : '🐶' }}</span>
+                                        @endif
                                     </a>
                                     <div>
                                         <h4 class="font-bold text-slate-900 leading-tight flex items-center gap-1.5">
@@ -179,14 +199,36 @@
 
                             <!-- Acciones -->
                             <div class="flex items-center gap-3 pt-2 border-t border-slate-100">
-                                <!-- Botón de Like (Me Guau) -->
-                                <form action="{{ route('posts.like', $post) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl transition {{ $post->isLikedByUser(Auth::id()) ? 'bg-pink-500 text-white shadow-md shadow-pink-500/20' : 'bg-pink-50 text-pink-600 hover:bg-pink-100' }}">
+                                <!-- Botón de Like (Me Guau) dinámico sin recarga -->
+                                <div x-data="{
+                                    liked: {{ $post->isLikedByUser(Auth::id()) ? 'true' : 'false' }},
+                                    likesCount: {{ $post->likes->count() }},
+                                    async toggleLike(url) {
+                                        let response = await fetch(url, {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                'Accept': 'application/json',
+                                                'Content-Type': 'application/json'
+                                            }
+                                        });
+                                        let data = await response.json();
+                                        if (data.success) {
+                                            this.liked = data.liked;
+                                            this.likesCount = data.likes_count;
+                                        }
+                                    }
+                                }">
+                                    <button @click="toggleLike('{{ route('posts.like', $post) }}')"
+                                            type="button"
+                                            class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-sm cursor-pointer"
+                                            :class="liked ? 'bg-pink-500 text-white shadow-pink-500/20' : 'bg-pink-50 text-pink-600 hover:bg-pink-100'">
                                         <span>❤️ Me Guau</span>
-                                        <span class="px-1.5 py-0.5 rounded-full text-[10px] {{ $post->isLikedByUser(Auth::id()) ? 'bg-white/20 text-white' : 'bg-white text-pink-600 shadow-sm' }}">{{ $post->likes_count }}</span>
+                                        <span class="px-1.5 py-0.5 rounded-full text-[10px]"
+                                            :class="liked ? 'bg-white/20 text-white' : 'bg-white text-pink-600 shadow-sm'"
+                                            x-text="likesCount"></span>
                                     </button>
-                                </form>
+                                </div>
 
                                 <!-- Botón Desplegar Comentarios -->
                                 <button @click="openComments = !openComments" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl transition">
@@ -196,41 +238,97 @@
                             </div>
 
                             <!-- Sección de Comentarios Desplegable -->
-                            <div x-show="openComments" x-cloak class="pt-4 space-y-3 border-t border-slate-100">
-                                <!-- Lista de Comentarios -->
+                            <div x-show="openComments" x-cloak class="pt-4 space-y-3 border-t border-slate-100"
+                                x-data="{
+                                    comments: @js($post->comments->map(fn($c) => [
+                                        'id' => $c->id,
+                                        'content' => $c->content,
+                                        'created_at' => $c->created_at->diffForHumans(),
+                                        'pet_name' => $c->pet->name,
+                                        'pet_url' => route('pets.show', $c->pet),
+                                        'pet_avatar' => $c->pet->avatar ? asset('storage/' . $c->pet->avatar) : null,
+                                        'pet_species' => $c->pet->species,
+                                        'can_delete' => $c->user_id === Auth::id(),
+                                        'delete_url' => route('comments.destroy', $c)
+                                    ])),
+                                    visibleLimit: 5,
+                                    newContent: '',
+                                    selectedPetId: '{{ $userPets->first()?->id }}',
+                                    async submitComment(postId, storeUrl) {
+                                        if (!this.newContent.trim()) return;
+                                        let formData = new FormData();
+                                        formData.append('_token', '{{ csrf_token() }}');
+                                        formData.append('content', this.newContent);
+                                        formData.append('pet_id', this.selectedPetId);
+
+                                        let response = await fetch(storeUrl, {
+                                            method: 'POST',
+                                            headers: { 'Accept': 'application/json' },
+                                            body: formData
+                                        });
+                                        let data = await response.json();
+                                        if (data.success) {
+                                            this.comments.push(data.comment);
+                                            this.newContent = '';
+                                            this.visibleLimit = this.comments.length;
+                                        }
+                                    }
+                                }">
+
+                                <!-- Lista de Comentarios con Tope de 5 -->
                                 <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                    @forelse($post->comments as $comment)
+                                    <template x-for="(comment, index) in comments.slice(0, visibleLimit)" :key="comment.id">
                                         <div class="bg-slate-50 p-3 rounded-2xl flex items-center justify-between text-xs">
-                                            <div class="flex gap-2 items-center">
-                                                <span class="font-extrabold text-purple-600">{{ $comment->pet->name }}:</span>
-                                                <span class="text-slate-700">{{ $comment->content }}</span>
+                                            <div class="flex items-center gap-2.5">
+                                                <!-- Avatar del comentario -->
+                                                <a :href="comment.pet_url" class="w-8 h-8 rounded-full overflow-hidden bg-purple-100 flex-shrink-0 flex items-center justify-center font-bold text-purple-700 border border-purple-200">
+                                                    <template x-if="comment.pet_avatar">
+                                                        <img :src="comment.pet_avatar" class="w-full h-full object-cover">
+                                                    </template>
+                                                    <template x-if="!comment.pet_avatar">
+                                                        <span x-text="comment.pet_species === 'cat' ? '🐱' : '🐶'"></span>
+                                                    </template>
+                                                </a>
+
+                                                <div class="flex flex-col">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <a :href="comment.pet_url" class="font-extrabold text-purple-600 hover:text-purple-800 transition" x-text="comment.pet_name + ':'"></a>
+                                                        <span class="text-slate-700" x-text="comment.content"></span>
+                                                    </div>
+                                                    <span class="text-[10px] text-slate-400 font-medium" x-text="comment.created_at"></span>
+                                                </div>
                                             </div>
 
-                                            <!-- 🗑️ BOTÓN DE ELIMINAR COMENTARIO -->
-                                            @if($comment->user_id === Auth::id())
-                                                <form action="{{ route('comments.destroy', $comment) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-[10px] text-slate-400 hover:text-pink-600 font-semibold transition ml-2">
-                                                        Eliminar
-                                                    </button>
+                                            <!-- Botón Eliminar -->
+                                            <template x-if="comment.can_delete">
+                                                <form :action="comment.delete_url" method="POST" class="inline" @submit.prevent="if(confirm('¿Borrar comentario?')) { $el.submit(); }">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="text-[10px] text-slate-400 hover:text-pink-600 font-semibold transition ml-2">Eliminar</button>
                                                 </form>
-                                            @endif
+                                            </template>
                                         </div>
-                                    @empty
+                                    </template>
+
+                                    <template x-if="comments.length === 0">
                                         <p class="text-xs text-slate-400 italic text-center py-2">Sé el primero en ladrar un comentario 🐾</p>
-                                    @endforelse
+                                    </template>
                                 </div>
 
-                                <!-- Formulario de nuevo comentario -->
-                                <form action="{{ route('comments.store', $post) }}" method="POST" class="flex gap-2 pt-2">
-                                    @csrf
-                                    <select name="pet_id" class="text-xs rounded-xl border-slate-200 bg-slate-50 py-2 px-2.5">
+                                <!-- Botón Mostrar más comentarios -->
+                                <div class="text-center" x-show="comments.length > visibleLimit">
+                                    <button @click="visibleLimit += 5" class="text-[11px] font-bold text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition">
+                                        Ver más comentarios (<span x-text="comments.length - visibleLimit"></span> más) 🔽
+                                    </button>
+                                </div>
+
+                                <!-- Formulario de nuevo comentario con AJAX -->
+                                <form @submit.prevent="submitComment({{ $post->id }}, '{{ route('comments.store', $post) }}')" class="flex gap-2 pt-2">
+                                    <select x-model="selectedPetId" class="text-xs rounded-xl border-slate-200 bg-slate-50 py-2 px-2.5">
                                         @foreach($userPets as $pet)
                                             <option value="{{ $pet->id }}">{{ $pet->name }}</option>
                                         @endforeach
                                     </select>
-                                    <input type="text" name="content" placeholder="Escribe un comentario..." class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2 px-3 focus:border-purple-500 focus:ring-purple-500" required>
+                                    <input type="text" x-model="newContent" placeholder="Escribe un comentario..." class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2 px-3 focus:border-purple-500 focus:ring-purple-500" required>
                                     <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
                                         Responder
                                     </button>
@@ -330,7 +428,6 @@
                         </div>
                     </template>
                 </div>
-
             </div>
 
         </div>

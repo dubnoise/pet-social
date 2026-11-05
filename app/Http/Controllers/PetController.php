@@ -52,6 +52,7 @@ class PetController extends Controller
             'posts.user',
             'posts.likes',
             'posts.comments.pet',
+            'posts.comments.user',
             'followers',
             'following',
             'badges'
@@ -60,7 +61,10 @@ class PetController extends Controller
         // Filtrar publicaciones que contienen imágenes para el álbum
         $galleryPhotos = $pet->posts()->whereNotNull('image')->latest()->get();
 
-        return view('pets.show', compact('pet', 'galleryPhotos'));
+        // 🐾 Obtenemos las mascotas del usuario autenticado para el selector de comentarios y fichas
+        $userPets = Auth::user()->pets;
+
+        return view('pets.show', compact('pet', 'galleryPhotos', 'userPets'));
     }
 
     // Seguir o dejar de seguir a otra mascota

@@ -18,6 +18,7 @@ class Spot extends Model
         'address',
         'latitude',
         'longitude',
+        'image',
     ];
 
     public function user(): BelongsTo

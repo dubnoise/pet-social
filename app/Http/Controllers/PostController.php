@@ -6,7 +6,9 @@ use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PostController extends Controller
@@ -59,11 +61,45 @@ class PostController extends Controller
 
         // Si tiene imagen adjunta, la borramos del storage
         if ($post->image) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image);
+            Storage::disk('public')->delete($post->image);
         }
 
         $post->delete();
 
         return back()->with('success', 'Publicación eliminada correctamente 🐾');
+    }
+
+    public function like(Request $request, Post $post): JsonResponse|RedirectResponse
+    {
+        $userId = Auth::id();
+
+        // Buscamos si ya existe un like de este usuario para este post
+        $existingLike = $post->likes()->where('user_id', $userId)->first();
+
+        if ($existingLike) {
+            // Si existe, lo eliminamos (dislike)
+            $existingLike->delete();
+            $liked = false;
+        } else {
+            // Si no existe, lo creamos de forma limpia
+            $post->likes()->create([
+                'user_id' => $userId,
+            ]);
+            $liked = true;
+        }
+
+        // Refrescamos la relación para contar el total exacto desde la base de datos
+        $post->load('likes');
+        $likesCount = $post->likes->count();
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'liked' => $liked,
+                'likes_count' => $likesCount,
+            ]);
+        }
+
+        return back();
     }
 }

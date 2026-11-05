@@ -19,13 +19,20 @@ class SpotController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'category' => 'required|string|in:park,cafe,vet,store',
-            'description' => 'nullable|string',
-            'address' => 'required|string|max:255',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'name' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string', 'in:parque,pipican,descampado,zona_general,playa_perros,montaña'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'address' => ['required', 'string', 'max:255'],
+            'latitude' => ['required', 'numeric'],
+            'longitude' => ['required', 'numeric'],
+            'image' => ['nullable', 'image', 'max:2048'], // 📸 Validación de la imagen
         ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            // Almacena la imagen en storage/app/public/spots
+            $imagePath = $request->file('image')->store('spots', 'public');
+        }
 
         Spot::create([
             'user_id' => Auth::id(),
@@ -35,9 +42,10 @@ class SpotController extends Controller
             'address' => $request->address,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'image' => $imagePath, // 📸 Aquí se guarda la ruta en la BD
         ]);
 
-        return redirect()->route('spots.index')->with('success', '¡Punto Pet-Friendly añadido con éxito 🐾!');
+        return redirect()->route('spots.index')->with('success', '¡Zona de paseo añadida con éxito 🐾!');
     }
 
     public function mySpots(): View

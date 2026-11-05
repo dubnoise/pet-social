@@ -32,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/posts/{post}/like', [LikeController::class, 'toggle'])->name('posts.like');
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::post('/posts/{post}/like', [PostController::class, 'like'])->name('posts.like');
 
     // Rutas de Mascotas
     Route::get('/pets/create', [PetController::class, 'create'])->name('pets.create');

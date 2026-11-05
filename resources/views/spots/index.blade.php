@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-black text-xl text-white leading-tight flex items-center gap-2">
-            <span>🗺️</span> Mapa Pet-Friendly y Parques
+            <span>🗺️</span> Mapa de Zonas de Paseo 🐾
         </h2>
     </x-slot>
 
@@ -31,37 +31,57 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <!-- Columna Izquierda: Formulario de Creación y Listado de Spots -->
-                <div class="space-y-6 lg:col-span-1">
-                    <!-- Formulario -->
-                    <div class="bg-white/95 backdrop-blur-md p-5 sm:p-6 rounded-3xl shadow-sm border border-purple-100 space-y-4">
-                        <div class="flex items-center justify-between pb-1 border-b border-purple-50">
-                            <h3 class="font-black text-sm uppercase tracking-wider text-purple-900">Añadir Nuevo Lugar 📍</h3>
-                            <a href="{{ route('spots.my-spots') }}" class="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition border border-purple-100 shadow-sm flex items-center gap-1">
-                                📋 <span>Mis lugares</span>
+                <!-- Columna Izquierda: Botón de añadir y Listado de Spots -->
+                <div class="space-y-6 lg:col-span-1" x-data="{ openAddModal: false, openCommunitySpots: false, visibleLimit: 5 }">
+
+                    <!-- Botón Principal para Desplegar el Formulario de Creación -->
+                    <div class="bg-white/95 backdrop-blur-md p-5 rounded-3xl shadow-sm border border-purple-100 flex items-center justify-between gap-2">
+                        <div>
+                            <h3 class="font-black text-sm uppercase tracking-wider text-purple-900">Zonas de Paseo 🐾</h3>
+                            <p class="text-[11px] text-slate-500">Descubre o comparte sitios perrunos.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('spots.my-spots') }}" class="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-2 rounded-xl transition border border-purple-100 shadow-sm" title="Mis Lugares">
+                                📋
                             </a>
+                            <button @click="openAddModal = !openAddModal" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow-md shadow-purple-600/25 flex items-center gap-1 cursor-pointer">
+                                <span x-text="openAddModal ? '✕ Cerrar' : '+ Añadir'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Formulario Desplegable -->
+                    <div x-show="openAddModal" x-cloak x-collapse class="bg-white/95 backdrop-blur-md p-5 sm:p-6 rounded-3xl shadow-sm border border-purple-100 space-y-4">
+                        <div class="pb-1 border-b border-purple-50">
+                            <h3 class="font-black text-sm uppercase tracking-wider text-purple-900">Nueva Zona de Paseo 📍</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Haz clic en el mapa de la derecha para señalar la ubicación exacta o usa tu GPS.</p>
                         </div>
 
-                        <p class="text-xs text-slate-500">Usa tu ubicación actual con el botón o haz clic en el mapa.</p>
-
-                        <button type="button" onclick="useCurrentLocation()" class="w-full bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 border border-purple-200 shadow-sm">
+                        <button type="button" onclick="useCurrentLocation()" class="w-full bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 border border-purple-200 shadow-sm cursor-pointer">
                             <span>📍</span> Usar mi ubicación actual (GPS)
                         </button>
 
-                        <form action="{{ route('spots.store') }}" method="POST" class="space-y-3">
+                        <form action="{{ route('spots.store') }}" method="POST" enctype="multipart/form-data" class="space-y-3">
                             @csrf
+
+                            <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude') }}" required>
+                            <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude') }}" required>
+
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Lugar</label>
-                                <input type="text" name="name" value="{{ old('name') }}" placeholder="Ej: Parque Canino del Turia" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 focus:border-purple-500 focus:ring-purple-500" required>
+                                <input type="text" name="name" value="{{ old('name') }}" placeholder="Ej: Parque Canino del Turia" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 focus:border-purple-500 focus:ring-purple-500 font-medium" required>
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Categoría</label>
-                                <select name="category" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 focus:border-purple-500 focus:ring-purple-500" required>
-                                    <option value="park">🌳 Parque / Zona Verde</option>
-                                    <option value="cafe">☕ Cafetería / Restaurante</option>
-                                    <option value="vet">🏥 Veterinario / Urgencias</option>
-                                    <option value="store">🛒 Tienda de Mascotas</option>
+                                <select name="category" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 focus:border-purple-500 focus:ring-purple-500 font-bold text-purple-900" required>
+                                    <option value="" disabled selected>Selecciona una categoría...</option>
+                                    <option value="parque">🌳 Parque / Zona ajardinada</option>
+                                    <option value="pipican">🐕 Pipican / Área canina</option>
+                                    <option value="descampado">🌾 Descampado / Zona abierta</option>
+                                    <option value="zona_general">🚶‍♂️ Zona de paseo general</option>
+                                    <option value="playa_perros">🏖️ Playa para perros</option>
+                                    <option value="montaña">⛰️ Ruta de montaña / Sendero</option>
                                 </select>
                             </div>
 
@@ -70,53 +90,70 @@
                                 <input type="text" name="address" value="{{ old('address') }}" placeholder="Ej: Calle Principal 12" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 focus:border-purple-500 focus:ring-purple-500" required>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Latitud</label>
-                                    <input type="text" id="latitude" name="latitude" value="{{ old('latitude') }}" readonly class="w-full text-xs rounded-xl border-slate-200 bg-slate-100 py-2 px-3 text-slate-500 cursor-not-allowed" required>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Longitud</label>
-                                    <input type="text" id="longitude" name="longitude" value="{{ old('longitude') }}" readonly class="w-full text-xs rounded-xl border-slate-200 bg-slate-100 py-2 px-3 text-slate-500 cursor-not-allowed" required>
-                                </div>
-                            </div>
-
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Descripción / Consejos</label>
                                 <textarea name="description" rows="2" placeholder="¿Tiene fuentes de agua? ¿Es obligatorio ir atado?" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 focus:border-purple-500 focus:ring-purple-500">{{ old('description') }}</textarea>
                             </div>
 
-                            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md shadow-purple-600/25">
-                                Guardar Ubicación 🐾
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Foto del lugar (opcional)</label>
+                                <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer">
+                            </div>
+
+                            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md shadow-purple-600/25 cursor-pointer">
+                                Guardar Zona de Paseo 🐾
                             </button>
                         </form>
                     </div>
 
-                    <!-- Listado Interactivo de Spots de la Comunidad -->
-                    <div class="bg-white/95 backdrop-blur-md p-5 sm:p-6 rounded-3xl shadow-sm border border-purple-100 space-y-3">
-                        <h3 class="font-black text-sm uppercase tracking-wider text-purple-900">Lugares de la Comunidad 🐾</h3>
-                        <p class="text-xs text-slate-500">Haz clic en cualquier lugar para enfocarlo en el mapa.</p>
+                    <!-- Zonas de la Comunidad Desplegable -->
+                    <div class="bg-white/95 backdrop-blur-md p-5 rounded-3xl shadow-sm border border-purple-100 space-y-3">
+                        <div class="flex items-center justify-between cursor-pointer" @click="openCommunitySpots = !openCommunitySpots">
+                            <div>
+                                <h3 class="font-black text-sm uppercase tracking-wider text-purple-900">Zonas de la Comunidad 🐾</h3>
+                                <p class="text-[11px] text-slate-500">Explora los últimos lugares aportados.</p>
+                            </div>
+                            <button class="text-xs font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition flex items-center gap-1 border border-purple-100 shadow-sm">
+                                <span x-text="openCommunitySpots ? 'Ocultar' : 'Ver ({{ count($spots) }})'"></span>
+                                <span class="transition-transform duration-200" :class="openCommunitySpots ? 'rotate-180' : ''">▼</span>
+                            </button>
+                        </div>
 
-                        <div class="max-h-72 overflow-y-auto space-y-2 pr-1 divide-y divide-purple-50">
-                            @forelse($spots as $spot)
-                                <div onclick="focusSpot({{ $spot->latitude }}, {{ $spot->longitude }}, {{ $spot->id }})" class="pt-3 first:pt-0 p-2.5 rounded-2xl hover:bg-purple-50 transition cursor-pointer flex items-center justify-between group">
-                                    <div>
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="text-xs">
-                                                @if($spot->category === 'park') 🌳
-                                                @elseif($spot->category === 'cafe') ☕
-                                                @elseif($spot->category === 'vet') 🏥
-                                                @else 🛒 @endif
-                                            </span>
-                                            <h4 class="font-bold text-xs text-slate-800 group-hover:text-purple-700 transition">{{ $spot->name }}</h4>
+                        <!-- Contenido Desplegable (Con tope inicial de 5 y botón ver más) -->
+                        <div x-show="openCommunitySpots" x-cloak x-collapse class="space-y-3 pt-2">
+                            <div class="max-h-80 overflow-y-auto space-y-2 pr-1 divide-y divide-purple-50">
+                                @forelse($spots as $index => $spot)
+                                    <div x-show="{{ $index }} < visibleLimit" onclick="focusSpot({{ $spot->latitude }}, {{ $spot->longitude }}, {{ $spot->id }})" class="pt-3 first:pt-0 p-2.5 rounded-2xl hover:bg-purple-50 transition cursor-pointer flex items-center justify-between group">
+                                        <div>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-xs">
+                                                    @if($spot->category === 'parque') 🌳
+                                                    @elseif($spot->category === 'pipican') 🐕
+                                                    @elseif($spot->category === 'descampado') 🌾
+                                                    @elseif($spot->category === 'playa_perros') 🏖️
+                                                    @elseif($spot->category === 'montaña') ⛰️
+                                                    @else 🚶‍♂️ @endif
+                                                </span>
+                                                <h4 class="font-bold text-xs text-slate-800 group-hover:text-purple-700 transition">{{ $spot->name }}</h4>
+                                            </div>
+                                            <p class="text-[11px] text-slate-500 truncate max-w-[200px] mt-0.5">📍 {{ $spot->address }}</p>
+                                            <span class="text-[10px] text-purple-500 font-semibold">Por {{ $spot->user->name }}</span>
                                         </div>
-                                        <p class="text-[11px] text-slate-500 truncate max-w-[220px] mt-0.5">📍 {{ $spot->address }}</p>
+                                        <span class="text-xs text-purple-400 group-hover:translate-x-1 transition">Ver →</span>
                                     </div>
-                                    <span class="text-xs text-purple-400 group-hover:translate-x-1 transition">Ver →</span>
+                                @empty
+                                    <p class="text-xs text-slate-400 text-center py-4">No hay zonas de paseo registradas todavía.</p>
+                                @endforelse
+                            </div>
+
+                            <!-- Botón Ver más -->
+                            @if(count($spots) > 5)
+                                <div class="text-center pt-2" x-show="visibleLimit < {{ count($spots) }}">
+                                    <button @click="visibleLimit += 5" class="text-xs font-bold text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 w-full py-2 rounded-xl transition cursor-pointer">
+                                        Ver más zonas 🔽
+                                    </button>
                                 </div>
-                            @empty
-                                <p class="text-xs text-slate-400 text-center py-4">No hay lugares registrados todavía.</p>
-                            @endforelse
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -133,7 +170,7 @@
     <!-- Script de Inicialización y Interactividad -->
     <script>
         let map, marker;
-        let spotMarkers = {}; // Almacenará los marcadores por ID de spot
+        let spotMarkers = {};
 
         function initMap(lat, lng) {
             if (map) {
@@ -177,7 +214,7 @@
                         initMap(position.coords.latitude, position.coords.longitude);
                     },
                     error => {
-                        alert('No se pudo obtener tu ubicación automática. Haz clic en el mapa.');
+                        alert('No se pudo obtener tu ubicación automática. Haz clic directamente en el mapa.');
                     }
                 );
             } else {
@@ -185,12 +222,26 @@
             }
         }
 
-        // Función para hacer zoom y abrir el popup al hacer clic en un elemento de la lista
         function focusSpot(lat, lng, spotId) {
-            map.setView([lat, lng], 16); // Hace zoom al lugar seleccionado
+            map.setView([lat, lng], 16);
             if (spotMarkers[spotId]) {
-                spotMarkers[spotId].openPopup(); // Abre su tarjeta informativa
+                spotMarkers[spotId].openPopup();
             }
+        }
+
+        function openImageModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = imageSrc;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            document.getElementById('modalImage').src = '';
         }
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -202,7 +253,6 @@
             const spots = @json($spots);
 
             if (spots.length > 0) {
-                // Centrar el mapa inicialmente en el primer spot si existe
                 defaultLat = spots[0].latitude;
                 defaultLng = spots[0].longitude;
                 map.setView([defaultLat, defaultLng], 13);
@@ -210,10 +260,12 @@
 
             spots.forEach(spot => {
                 let iconEmoji = '🐾';
-                if(spot.category === 'park') iconEmoji = '🌳';
-                if(spot.category === 'cafe') iconEmoji = '☕';
-                if(spot.category === 'vet') iconEmoji = '🏥';
-                if(spot.category === 'store') iconEmoji = '🛒';
+                if(spot.category === 'parque') iconEmoji = '🌳';
+                if(spot.category === 'pipican') iconEmoji = '🐕';
+                if(spot.category === 'descampado') iconEmoji = '🌾';
+                if(spot.category === 'zona_general') iconEmoji = '🚶‍♂️';
+                if(spot.category === 'playa_perros') iconEmoji = '🏖️';
+                if(spot.category === 'montaña') iconEmoji = '⛰️';
 
                 const customIcon = L.divIcon({
                     className: 'custom-div-icon',
@@ -222,13 +274,25 @@
                     iconAnchor: [17, 17]
                 });
 
+                // 📸 Popup enriquecido con imagen ampliable al hacer clic
                 const popupContent = `
-                    <div style="font-family: inherit; padding: 6px; min-width: 180px;">
+                    <div style="font-family: inherit; padding: 4px; min-width: 200px; max-width: 240px;">
                         <span style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #7e22ce; background: #f3e8ff; padding: 2px 6px; border-radius: 4px;">${spot.category}</span>
                         <h4 style="font-weight: 800; font-size: 14px; margin: 6px 0 2px 0; color: #1e293b;">${spot.name}</h4>
                         <p style="font-size: 11px; color: #475569; margin: 2px 0;">📍 ${spot.address}</p>
-                        ${spot.description ? `<p style="font-size: 11px; color: #64748b; margin-top: 4px; font-style: italic;">"${spot.description}"</p>` : ''}
-                        <span style="font-size: 9px; color: #94a3b8; display: block; margin-top: 6px; border-top: 1px solid #f1f5f9; pt-1;">Aportado por ${spot.user.name}</span>
+
+                        ${spot.image ? `
+                            <div style="margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1px solid #e9d5ff; position: relative; cursor: pointer;" title="Haz clic para ampliar" onclick="openImageModal('/storage/${spot.image}')">
+                                <img src="/storage/${spot.image}" alt="${spot.name}" style="width: 100%; height: 130px; object-fit: cover; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" />
+                                <div style="position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; font-size: 9px; padding: 2px 6px; border-radius: 6px; pointer-events: none;">🔍 Ampliar</div>
+                            </div>
+                        ` : ''}
+
+                        ${spot.description ? `<p style="font-size: 11px; color: #64748b; margin-top: 6px; font-style: italic;">"${spot.description}"</p>` : ''}
+
+                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 9px; color: #94a3b8;">Aportado por ${spot.user.name}</span>
+                        </div>
                     </div>
                 `;
 
@@ -236,9 +300,21 @@
                     .addTo(map)
                     .bindPopup(popupContent);
 
-                // Guardar referencia del marcador en el objeto
                 spotMarkers[spot.id] = spotMarker;
             });
         });
     </script>
+
+    <!-- 🖼️ Modal para Ampliar Imagen -->
+    <div id="imageModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity duration-300" onclick="closeImageModal()">
+        <div class="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onclick="event.stopPropagation()">
+            <!-- Botón de cerrar -->
+            <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold transition cursor-pointer">
+                ✕
+            </button>
+            <!-- Imagen ampliada -->
+            <img id="modalImage" src="" alt="Imagen ampliada" class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10" />
+        </div>
+    </div>
+
 </x-app-layout>
