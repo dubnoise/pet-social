@@ -37,12 +37,15 @@ class PostController extends Controller
             $imagePath = $request->file('image')->store('posts', 'public');
         }
 
-        Post::create([
+        $post = Post::create([
             'user_id' => Auth::id(),
             'pet_id' => $request->pet_id,
             'content' => $request->content,
             'image' => $imagePath,
         ]);
+
+        // 🏆 Comprobar y otorgar insignias a la mascota (ej: Primer Latido)
+        \App\Http\Controllers\PetController::checkAndAwardBadges($post->pet);
 
         return redirect()->route('dashboard')->with('success', '¡Ladrido publicado con éxito! 🐾');
     }

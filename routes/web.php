@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pets/create', [PetController::class, 'create'])->name('pets.create');
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
     Route::get('/pets/{pet}', [PetController::class, 'show'])->name('pets.show');
+    Route::post('/pets/{pet}/avatar', [PetController::class, 'updateAvatar'])->name('pets.avatar.update');
 
     // Sistema de Seguidores / Manada
     Route::post('/pets/{pet}/follow', [FollowController::class, 'toggle'])->name('pets.follow');

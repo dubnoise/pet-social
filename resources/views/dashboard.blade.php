@@ -95,36 +95,41 @@
 
                 <!-- Formulario para publicar -->
                 <div class="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-purple-100/80">
-                    <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" class="space-y-3">
                         @csrf
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-purple-900/60 uppercase tracking-wider mb-2">Publicar como:</label>
-                            <select name="pet_id" class="w-full rounded-2xl border-purple-100 focus:border-purple-500 focus:ring-purple-500 text-sm bg-purple-50/30 py-2.5 px-3 text-slate-800 font-medium">
-                                @foreach($userPets as $pet)
-                                    <option value="{{ $pet->id }}">{{ $pet->name }} ({{ ucfirst($pet->species_in_spanish) }})</option>
+
+                        <!-- Selector de mascota si tienes varias -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Publicar como:</label>
+                            <select name="pet_id" class="w-full text-xs rounded-xl border-purple-200 bg-purple-50 py-2.5 px-3 focus:border-purple-500 focus:ring-purple-500 text-purple-900 font-bold" required>
+                                @foreach(Auth::user()->pets as $pet)
+                                    <option value="{{ $pet->id }}">{{ $pet->name }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="mb-4">
-                            <textarea name="content" rows="3" class="w-full rounded-2xl border-purple-100 focus:border-purple-500 focus:ring-purple-500 text-sm p-4 bg-purple-50/30 resize-none text-slate-800 placeholder-black-400" placeholder="¿Qué travesura hizo hoy tu mascota? ¡Cuéntaselo a la manada! 🐕"></textarea>
+                        <!-- Contenido del latido -->
+                        <div>
+                            <textarea name="content" rows="3" placeholder="¿Qué está haciendo tu peludo hoy? 🐾" class="w-full text-xs rounded-2xl border-purple-200 bg-purple-50/50 p-3 focus:border-purple-500 focus:ring-purple-500" required></textarea>
                         </div>
 
-                        <div class="flex items-center justify-between pt-2 border-t border-purple-50">
-                            <label class="cursor-pointer inline-flex items-center gap-2 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100/80 px-4 py-2.5 rounded-xl transition">
-                                <span>📷 Añadir Foto</span>
-                                <input type="file" name="image" class="hidden" accept="image/*">
+                        <!-- 📸 Input para subir foto -->
+                        <div class="flex items-center gap-2">
+                            <label class="cursor-pointer bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                                <span>📷</span> Añadir foto
+                                <input type="file" name="image" accept="image/*" class="hidden" onchange="document.getElementById('file-name').textContent = this.files[0] ? this.files[0].name : ''">
                             </label>
-
-                            <button type="submit" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm shadow-md shadow-purple-500/20 transition hover:scale-105">
-                                Publicar Ladrido 🚀
-                            </button>
+                            <span id="file-name" class="text-[11px] text-slate-500 truncate"></span>
                         </div>
+
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md shadow-purple-600/25">
+                            Publicar Latido 📢
+                        </button>
                     </form>
                 </div>
 
                 <!-- Feed de Publicaciones -->
-                <div class="space-y-4">
+                <div class="space-y-4" x-data="{ activeImage: null }">
                     @forelse($posts as $post)
                         <div x-data="{ openComments: false }" class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100 space-y-4">
                             <!-- Cabecera del Post -->
@@ -161,9 +166,14 @@
                             <!-- Contenido -->
                             <p class="text-slate-700 text-sm leading-relaxed">{{ $post->content }}</p>
 
+                            <!-- 📸 IMAGEN ADJUNTA INTERACTIVA -->
                             @if($post->image)
-                                <div class="rounded-2xl overflow-hidden border border-slate-100 max-h-96">
-                                    <img src="{{ asset('storage/' . $post->image) }}" alt="Post image" class="w-full object-cover">
+                                <div class="rounded-2xl overflow-hidden border border-slate-100 max-h-96 cursor-pointer group relative"
+                                    @click="activeImage = '{{ asset('storage/' . $post->image) }}'">
+                                    <img src="{{ asset('storage/' . $post->image) }}" alt="Post image" class="w-full object-cover group-hover:scale-105 transition duration-300">
+                                    <div class="absolute inset-0 bg-purple-950/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                        <span class="bg-white/90 text-purple-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-md backdrop-blur-sm">🔍 Ampliar imagen</span>
+                                    </div>
                                 </div>
                             @endif
 
@@ -232,6 +242,93 @@
                             <p class="text-slate-500 text-sm">No hay publicaciones todavía en esta sección 🐾</p>
                         </div>
                     @endforelse
+
+                    <!-- 🖼️ MODAL / VISOR DE IMAGEN A PANTALLA COMPLETA CON ZOOM -->
+                    <template x-if="activeImage">
+                        <div class="fixed inset-0 w-screen h-screen z-[999999] bg-black/95 backdrop-blur-2xl flex items-center justify-center overflow-hidden select-none"
+                            x-data="{
+                                scale: 1,
+                                isDragging: false,
+                                startX: 0,
+                                startY: 0,
+                                translateX: 0,
+                                translateY: 0,
+                                startDrag(e) {
+                                    if (this.scale > 1) {
+                                        this.isDragging = true;
+                                        this.startX = (e.clientX || e.touches[0].clientX) - this.translateX;
+                                        this.startY = (e.clientY || e.touches[0].clientY) - this.translateY;
+                                    }
+                                },
+                                onDrag(e) {
+                                    if (!this.isDragging) return;
+                                    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                                    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+                                    this.translateX = clientX - this.startX;
+                                    this.translateY = clientY - this.startY;
+                                },
+                                stopDrag() {
+                                    this.isDragging = false;
+                                },
+                                resetZoom() {
+                                    this.scale = 1;
+                                    this.translateX = 0;
+                                    this.translateY = 0;
+                                }
+                            }"
+                            @keydown.escape.window="activeImage = null"
+                            @mousemove.window="onDrag($event)"
+                            @mouseup.window="stopDrag()"
+                            @touchmove="onDrag($event)"
+                            @touchend="stopDrag()">
+
+                            <!-- Barra Superior Absoluta -->
+                            <div class="absolute top-0 inset-x-0 p-4 sm:p-6 flex items-center justify-between z-[9999999] bg-gradient-to-b from-black/90 via-black/50 to-transparent pointer-events-auto">
+                                <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs font-medium shadow-lg">
+                                    <span>🔍 <span x-text="Math.round(scale * 100)"></span>%</span>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <button @click="resetZoom()" class="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-full transition backdrop-blur-md border border-white/10 text-xs flex items-center justify-center shadow-lg" title="Restaurar zoom">
+                                        🔄
+                                    </button>
+                                    <button @click="activeImage = null" class="bg-white/20 hover:bg-white/30 text-white font-bold px-4 py-2 rounded-full transition backdrop-blur-md border border-white/20 text-xs shadow-lg flex items-center gap-1.5">
+                                        ✕ Cerrar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Área Central Interactiva -->
+                            <div class="w-full h-full flex items-center justify-center overflow-hidden touch-none"
+                                @click.self="activeImage = null"
+                                @wheel.prevent="
+                                    scale = Math.max(1, Math.min(4, scale + ($event.deltaY > 0 ? -0.2 : 0.2)));
+                                    if(scale === 1) { translateX = 0; translateY = 0; }
+                                ">
+
+                                <img :src="activeImage"
+                                    alt="Imagen ampliada"
+                                    class="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl shadow-2xl transition-transform duration-75 ease-out select-none"
+                                    :class="scale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'"
+                                    :style="`transform: scale(${scale}) translate(${translateX}px, ${translateY}px);`"
+                                    @mousedown="startDrag($event)"
+                                    @touchstart="startDrag($event)"
+                                    @dblclick="
+                                        scale = scale > 1 ? 1 : 2.5;
+                                        translateX = 0;
+                                        translateY = 0;
+                                    "
+                                    draggable="false">
+                            </div>
+
+                            <!-- Indicador Inferior -->
+                            <div class="absolute bottom-6 inset-x-0 text-center pointer-events-none z-50">
+                                <span class="bg-white/10 backdrop-blur-md text-white/90 text-[11px] px-4 py-1.5 rounded-full border border-white/10 shadow-lg">
+                                    Haz doble clic para hacer zoom y mantén clic para arrastrar 🐾
+                                </span>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
             </div>

@@ -28,6 +28,7 @@ class Pet extends Model
         'breed',
         'avatar',
         'bio',
+        'avatar',
     ];
 
     public function user(): BelongsTo
@@ -65,5 +66,10 @@ class Pet extends Model
     public function isFollowing(Pet $otherPet): bool
     {
         return $this->following()->where('followed_pet_id', $otherPet->id)->exists();
+    }
+
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class, 'pet_badge')->withTimestamps();
     }
 }
